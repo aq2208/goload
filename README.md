@@ -1,11 +1,7 @@
-# goload
-
 # 🚀 GoLoad – Distributed Download Manager in Golang
 
 GoLoad is a high-performance, extensible, and self-hostable file download server inspired by [PyLoad](https://pyload.net/) and Internet Download Manager (IDM).  
 Built using Go, Kafka, and modern cloud-native tools, GoLoad allows users to submit file URLs and download them asynchronously — with real-time tracking and secure access.
-
-![GoLoad Architecture](./assets/goload-architecture.png) <!-- Optional: Add a diagram later -->
 
 ---
 
@@ -80,3 +76,24 @@ Built using Go, Kafka, and modern cloud-native tools, GoLoad allows users to sub
 ├── config/               # App config files
 ├── scripts/              # Kafka setup, DB migrations
 └── README.md
+```
+
+---
+
+## 🛠️ Getting Started
+
+- **Prerequisites**: Go 1.20+, Docker (for Kafka, Redis, MySQL, MinIO)
+
+```bash
+# Clone the repo
+git clone https://github.com/yourname/goload.git
+cd goload
+
+# Run using Docker Compose (WIP)
+docker-compose up
+
+# OR run locally
+go run cmd/server/main.go
+```
+
+
