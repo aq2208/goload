@@ -52,15 +52,6 @@ Built using Go, Kafka, and modern cloud-native tools, GoLoad allows users to sub
 
 ---
 
-## 🚧 Work in Progress
-
-- [ ] File categorization & tagging
-- [ ] Download retries with exponential backoff
-- [ ] UI dashboard (React-based frontend)
-- [ ] Role-based access control (RBAC)
-
----
-
 ## 📂 Project Structure
 
 ```bash
@@ -86,7 +77,7 @@ Built using Go, Kafka, and modern cloud-native tools, GoLoad allows users to sub
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourname/goload.git
+git clone https://github.com/aq2208/goload.git
 cd goload
 
 # Run using Docker Compose (WIP)
