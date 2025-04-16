@@ -2,10 +2,10 @@ CREATE DATABASE goload;
 
 USE goload;
 
-CREATE TABLE users (
+CREATE TABLE user (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    username VARCHAR(100),
+    email VARCHAR(255) UNIQUE,
+    username VARCHAR(100) UNIQUE,
     password_hash VARCHAR(255),         -- nullable if using OAuth
     auth_provider ENUM('google', 'local') NOT NULL DEFAULT 'local',
     google_id VARCHAR(100),             -- optional: store Google account ID
@@ -13,7 +13,7 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE download_tasks (
+CREATE TABLE download_task (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     download_type ENUM('http', 'ftp', 'torrent') NOT NULL DEFAULT 'http',
@@ -22,12 +22,10 @@ CREATE TABLE download_tasks (
     status ENUM('queued', 'in_progress', 'completed', 'failed') NOT NULL DEFAULT 'queued',
     file_path TEXT,                          -- local/S3 path to downloaded file
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE user_tokens (
+CREATE TABLE user_token (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     refresh_token VARCHAR(512) NOT NULL,
@@ -36,6 +34,5 @@ CREATE TABLE user_tokens (
     expires_at DATETIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(user_id, refresh_token)
 );

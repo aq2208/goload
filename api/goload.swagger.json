@@ -1,0 +1,194 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/proto/goload.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "AccountService"
+    },
+    {
+      "name": "DownloadService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {},
+  "definitions": {
+    "goloadCreateAccountResponse": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "goloadCreateDownloadTaskResponse": {
+      "type": "object",
+      "properties": {
+        "downloadTask": {
+          "$ref": "#/definitions/goloadDownloadTask"
+        }
+      }
+    },
+    "goloadCreateSessionResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        }
+      }
+    },
+    "goloadDeleteDownloadTaskResponse": {
+      "type": "object"
+    },
+    "goloadDownloadStatus": {
+      "type": "string",
+      "enum": [
+        "UndefinedStatus",
+        "queued",
+        "in_progress",
+        "failed",
+        "completed"
+      ],
+      "default": "UndefinedStatus"
+    },
+    "goloadDownloadTask": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "ofUser": {
+          "$ref": "#/definitions/goloadUser"
+        },
+        "downloadType": {
+          "$ref": "#/definitions/goloadDownloadType"
+        },
+        "url": {
+          "type": "string"
+        },
+        "downloadStatus": {
+          "$ref": "#/definitions/goloadDownloadStatus"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "filesize": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "goloadDownloadType": {
+      "type": "string",
+      "enum": [
+        "UndefinedType",
+        "HTTP"
+      ],
+      "default": "UndefinedType"
+    },
+    "goloadGetDownloadFileResponse": {
+      "type": "object",
+      "properties": {
+        "chunkData": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "goloadGetDownloadTaskListResponse": {
+      "type": "object",
+      "properties": {
+        "downloadTaskList": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/goloadDownloadTask"
+          }
+        },
+        "totalDownloadTaskCount": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "offset": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "goloadGetDownloadTaskResponse": {
+      "type": "object",
+      "properties": {
+        "downloadTaskList": {
+          "$ref": "#/definitions/goloadDownloadTask"
+        }
+      }
+    },
+    "goloadUpdateDownloadTaskResponse": {
+      "type": "object",
+      "properties": {
+        "downloadTask": {
+          "$ref": "#/definitions/goloadDownloadTask"
+        }
+      }
+    },
+    "goloadUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "username": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package goload;
+
+option go_package = "github.com/aq2208/goload";
+
+// import "google/api/annotations.proto";  // Required for grpc-gateway
+
+service AccountService {
+  rpc CreateAccount (CreateAccountRequest) returns (CreateAccountResponse);
+  rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse);
+}
+
+message CreateAccountRequest {
+    string username = 1;
+    string password = 2;
+}
+message CreateAccountResponse {
+    uint64 user_id = 1;
+}
+
+message CreateSessionRequest {
+    string username = 1;
+    string password = 2;
+}
+message CreateSessionResponse {
+    string token = 1;
+}
+
+service DownloadService {
+  rpc CreateDownloadTask (CreateDownloadTaskRequest) returns (CreateDownloadTaskResponse);
+  rpc GetDownloadTaskList (GetDownloadTaskListRequest) returns (GetDownloadTaskListResponse);
+  rpc GetDownloadTask (GetDownloadTaskRequest) returns (GetDownloadTaskResponse);
+  rpc UpdateDownloadTask (UpdateDownloadTaskRequest) returns (UpdateDownloadTaskResponse);
+  rpc DeleteDownloadTask (DeleteDownloadTaskRequest) returns (DeleteDownloadTaskResponse);
+  rpc GetDownloadFile (GetDownloadFileRequest) returns (stream GetDownloadFileResponse);
+}
+
+enum DownloadType {
+    UndefinedType = 0;
+    HTTP = 1;
+}
+
+enum DownloadStatus {
+    UndefinedStatus = 0;
+    queued = 1;
+    in_progress = 2;
+    failed = 3;
+    completed = 4;
+}
+
+message User {
+    uint64 id = 1;
+    string username = 2;
+}
+message DownloadTask {
+    uint64 id = 1;
+    User of_user = 2;
+    DownloadType download_type = 3;
+    string url = 4;
+    DownloadStatus download_status = 5;
+    string filename = 6;
+    uint64 filesize = 7;
+    string created_at = 8;
+    string updated_at = 9;
+}
+
+message CreateDownloadTaskRequest {
+    string token = 1;
+    DownloadType download_type = 2;
+    string url = 3;
+}
+message CreateDownloadTaskResponse {
+    DownloadTask download_task = 1;
+}
+
+message GetDownloadTaskListRequest {
+    string token = 1;
+    uint64 offset = 2;
+    uint64 limit = 3;
+}
+message GetDownloadTaskListResponse {
+    repeated DownloadTask download_task_list = 1;
+    uint64 total_download_task_count = 2;
+    uint64 offset = 3;
+    uint64 limit = 4;
+}
+
+message GetDownloadTaskRequest {
+    string token = 1;
+    uint64 download_task_id = 2;
+}
+message GetDownloadTaskResponse {
+    DownloadTask download_task_list = 1;
+}
+
+message UpdateDownloadTaskRequest {
+    string token = 1;
+    uint64 download_task_id = 2;
+    string url = 3;
+}
+message UpdateDownloadTaskResponse {
+    DownloadTask download_task = 1;
+}
+
+message DeleteDownloadTaskRequest {
+    string token = 1;
+    uint64 download_task_id = 2;
+}
+message DeleteDownloadTaskResponse {}
+
+message GetDownloadFileRequest {
+    string token = 1;
+    uint64 download_task_id = 2;
+}
+message GetDownloadFileResponse {
+    bytes chunk_data = 1;
+}
