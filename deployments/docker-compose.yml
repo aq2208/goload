@@ -1,0 +1,9 @@
+version: "1.0"
+
+services:
+  mysql:
+    image: ""
+  redis:
+    image: ""
+  kafka:
+    image: ""

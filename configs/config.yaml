@@ -1,0 +1,8 @@
+database:
+  host: ""
+  port: ""
+  username: ""
+  password: ""
+cache:
+http:
+  host: ":8080"
