@@ -1,8 +1,8 @@
 package model
 
 import (
-	"time"
 	"database/sql"
+	"time"
 )
 
 type DownloadType string
@@ -20,13 +20,13 @@ const (
 )
 
 type DownloadTask struct {
-	ID           int64          `db:"id"`
-	UserID       int64          `db:"user_id"`
-	DownloadType DownloadType   `db:"download_type"`
-	URL          string         `db:"url"`
-	Metadata     sql.NullString `db:"metadata"`    // store as raw JSON string
-	Status       DownloadStatus `db:"status"`
-	FilePath     *string        `db:"file_path"`   // nullable
-	CreatedAt    time.Time      `db:"created_at"`
-	UpdatedAt    time.Time      `db:"updated_at"`
+	ID           uint64
+	UserID       uint64
+	DownloadType DownloadType
+	URL          string
+	Metadata     sql.NullString
+	Status       DownloadStatus
+	FilePath     *string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }

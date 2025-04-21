@@ -10,6 +10,7 @@ import (
 type Token interface {
 	GenerateToken(ctx context.Context, accountId uint64) (string, time.Time, error)
 	GetAccountIdAndExpireTime(ctx context.Context, token string) (uint64, time.Time, error)
+	//RefreshToken()
 }
 
 type token struct {
@@ -23,6 +24,8 @@ func (t *token) GenerateToken(ctx context.Context, accountId uint64) (string, ti
 
 // GetAccountIdAndExpireTime implements Token.
 func (t *token) GetAccountIdAndExpireTime(ctx context.Context, token string) (uint64, time.Time, error) {
+
+	// if token is expired -> ....
 	panic("unimplemented")
 }
 

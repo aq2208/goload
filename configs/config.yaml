@@ -6,3 +6,4 @@ database:
 cache:
 http:
   host: ":8080"
+mq:

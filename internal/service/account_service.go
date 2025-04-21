@@ -11,14 +11,11 @@ type CreateAccountRequest struct {
 	Password string
 }
 
-type CreateAccountResponse struct {
-}
+type CreateAccountResponse struct{}
 
-type CreateSessionRequest struct {
-}
+type CreateSessionRequest struct{}
 
-type CreateSessionResponse struct {
-}
+type CreateSessionResponse struct{}
 
 type AccountService interface {
 	CreateAccount(ctx context.Context, req CreateAccountRequest) (CreateAccountResponse, error)
@@ -41,11 +38,10 @@ func (a *accountService) CreateSession(ctx context.Context, req CreateSessionReq
 	// check username and password hashed matched
 
 	// if matched, generate and response jwt
-	
+
 	panic("unimplemented")
 }
 
-func NewAccountService() AccountService {
-	return &accountService{}
+func NewAccountService(repo repository.AccountRepository) AccountService {
+	return &accountService{repo: repo}
 }
-
