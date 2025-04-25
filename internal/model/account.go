@@ -10,12 +10,12 @@ const (
 )
 
 type User struct {
-	ID           uint64
-	Email        *string
-	Username     *string
-	PasswordHash *string
-	AuthProvider AuthProvider
-	GoogleID     *string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           uint64    `json:"id"`
+	Email        string    `json:"email"`
+	Username     string    `json:"username"`
+	PasswordHash string    `json:"-"`
+	AuthProvider string    `json:"auth_provider"`
+	GoogleID     string    `json:"google_id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }

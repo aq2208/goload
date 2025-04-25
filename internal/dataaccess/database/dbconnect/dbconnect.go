@@ -29,5 +29,7 @@ func NewMySqlConnection() (*sql.DB, error) {
         return nil, err
     }
 
+    log.Printf("Database connected successful!")
+
     return db, nil
 }
