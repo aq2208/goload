@@ -1,13 +1,15 @@
 version: "3.8"
 
+name: goload
+
 services:
   mysql:
     image: mysql:latest
     environment:
       MYSQL_ROOT_PASSWORD: quancuanam2003
       MYSQL_DATABASE: goload
-      MYSQL_USER: root
-    #  MYSQL_PASSWORD: quancuanam2003
+      # MYSQL_USER: root
+      # MYSQL_PASSWORD: quancuanam2003
     ports:
       - "3306:3306"
     restart: always
