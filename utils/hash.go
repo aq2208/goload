@@ -9,12 +9,12 @@ import (
 
 type Hash interface {
 	Hash(ctx context.Context, data string) (string, error)
-	IsHashEqual(ctx context.Context, data string, hashed string) (bool, error)
+	IsHashEqual(ctx context.Context, data string, hashed string) (bool)
 }
 
 type hash struct {}
 
-func NewHash() Hash {
+func NewHashUtil() Hash {
 	return &hash{}
 }
 
@@ -29,14 +29,14 @@ func (h *hash) Hash(ctx context.Context, data string) (string, error) {
 }
 
 // IsHashEqual implements Hash.
-func (h *hash) IsHashEqual(ctx context.Context, data string, hashed string) (bool, error) {
+func (h *hash) IsHashEqual(ctx context.Context, data string, hashed string) (bool) {
 	if err := bcrypt.CompareHashAndPassword([]byte(hashed), []byte(data)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return false, nil
+			return false
 		}
 
-		return false, err
+		return false
 	}
 
-	return true, nil
+	return true
 }

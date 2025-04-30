@@ -53,7 +53,7 @@ type downloadTaskService struct {
 
 // CreateDownloadTask implements DownloadTaskService.
 func (d *downloadTaskService) CreateDownloadTask(ctx context.Context, req *CreateDownloadTaskRequest) (*CreateDownloadTaskResponse, error) {
-	accountId, _, err := d.tokenUtil.GetAccountIdAndExpireTime(ctx, req.Token)
+	accountId, err := d.tokenUtil.GetAccountIdAndExpireTime(ctx, req.Token)
 	if err != nil {
 		return &CreateDownloadTaskResponse{}, err
 	}

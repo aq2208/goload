@@ -8,17 +8,13 @@ import (
 )
 
 func LoadEnv() {
-	err := godotenv.Load()
+	err := godotenv.Load("../.env")
 	if err != nil {
 		log.Fatal("No .env file found, using system environment variables")
 	}
 }
 
 func GetEnv(key string) string {
-	value, exists := os.LookupEnv(key)
-	if exists {
-		return value
-	}
-
-	return ""
+	value := os.Getenv(key)
+	return value
 }

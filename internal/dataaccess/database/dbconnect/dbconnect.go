@@ -16,6 +16,9 @@ func NewMySqlConnection() (*sql.DB, error) {
 	cfg.Addr = configs.GetEnv("DB_HOST")
 	cfg.DBName = configs.GetEnv("DB_NAME")
 	cfg.ParseTime = true
+
+    log.Default().Printf("Test get config: %s", configs.GetEnv("DB_USER"))
+    log.Default().Printf("Database DSN: %s", cfg.FormatDSN())
     
     db, err := sql.Open("mysql", cfg.FormatDSN())
     if err != nil {
@@ -25,8 +28,8 @@ func NewMySqlConnection() (*sql.DB, error) {
 
     pingErr := db.Ping()
     if pingErr != nil {
-        log.Fatalf("Ping MySQL Database error: %v", err)
-        return nil, err
+        log.Fatalf("Ping MySQL Database error: %v", pingErr)
+        return nil, pingErr
     }
 
     log.Printf("Database connected successful!")
