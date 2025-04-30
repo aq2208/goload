@@ -59,8 +59,7 @@ func (a *accountRepository) GetAccountByUsername(ctx context.Context, username s
 	err := row.Scan(&user.ID, &user.Username, &user.PasswordHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// return nil, fmt.Errorf("username %s: no such user", username)
-			return nil, err
+			return nil, fmt.Errorf("username %s: no such user: %w", username, sql.ErrNoRows)
 		}
 
 		return nil, err
