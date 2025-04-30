@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"log"
 
+	"github.com/aq2208/goload/internal/model"
 	"github.com/aq2208/goload/internal/repository"
 	"github.com/aq2208/goload/utils"
 )
@@ -16,7 +19,7 @@ type CreateAccountRequest struct {
 type CreateAccountResponse struct{}
 
 type AccountService interface {
-	CreateAccount(ctx context.Context, req CreateAccountRequest) (CreateAccountResponse, error)
+	CreateAccount(ctx context.Context, username string, password string, email string) (uint64, error)
 	CreateSession(ctx context.Context, username string, password string) (string, error)
 }
 
@@ -27,10 +30,30 @@ type accountService struct {
 }
 
 // CreateAccount implements AccountService.
-func (a *accountService) CreateAccount(ctx context.Context, req CreateAccountRequest) (CreateAccountResponse, error) {
-	// check username existed, if not, create new user and create hash pwd
+func (a *accountService) CreateAccount(ctx context.Context, username string, password string, email string) (uint64, error) {
+	// check username existed by username
+	existing, err := a.repo.GetAccountByUsername(ctx, username)
+	if err != nil && err != sql.ErrNoRows {
+		log.Default().Printf("CreateAccount error: %v", err)
+		return 0, err
+	}
+	if existing != nil {
+		return 0, errors.New("Account already existed")
+	}
 
-	panic("unimplemented")
+	// create new account and hash pwd
+	hashed, err := a.hash.Hash(ctx, password)
+	if err != nil {
+		return 0, err
+	}
+
+	return a.repo.CreateAccount(
+		ctx, 
+		model.User{
+			Email: email,
+			Username: username,
+			PasswordHash: hashed,
+		})
 }
 
 // CreateSession implements AccountService.

@@ -13,7 +13,8 @@ services:
     ports:
       - "3306:3306"
     restart: always
-    # volumes:
+    volumes:
+      - mysql_data:/var/lib/mysql
 
   redis:
     image: redis:latest
@@ -49,3 +50,6 @@ services:
       - "9000:9000"
     depends_on:
       - kafka
+
+volumes:
+  mysql_data:

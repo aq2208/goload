@@ -10,7 +10,7 @@ import (
 )
 
 type AccountRepository interface {
-	CreateAccount(ctx context.Context, account model.User) error
+	CreateAccount(ctx context.Context, account model.User) (uint64, error)
 	GetAccountById(ctx context.Context, id uint64) (*model.User, error)
 	GetAccountByUsername(ctx context.Context, username string) (*model.User, error)
 }
@@ -20,16 +20,16 @@ type accountRepository struct {
 }
 
 // CreateAccount implements AccountRepository.
-func (a *accountRepository) CreateAccount(ctx context.Context, account model.User) error {
-	result, err := a.db.Exec("INSERT INTO user () VALUES()")
+func (a *accountRepository) CreateAccount(ctx context.Context, account model.User) (uint64, error) {
+	result, err := a.db.Exec("INSERT INTO user (email, username, password_hash) VALUES(?,?,?)", account.Email, account.Username, account.PasswordHash)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	insertId, _ := result.LastInsertId()
 	log.Default().Printf("Inserted user %d successful", insertId)
 
-	return nil
+	return uint64(insertId), nil
 }
 
 // GetAccountById implements AccountRepository.
@@ -57,9 +57,10 @@ func (a *accountRepository) GetAccountByUsername(ctx context.Context, username s
 	row := a.db.QueryRow("SELECT id, username, password_hash FROM user WHERE username = ? and auth_provider = 'local'", username)
 
 	err := row.Scan(&user.ID, &user.Username, &user.PasswordHash)
-	if (err != nil) {
-		if (err == sql.ErrNoRows) {
-			return nil, fmt.Errorf("username %s: no such user", username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// return nil, fmt.Errorf("username %s: no such user", username)
+			return nil, err
 		}
 
 		return nil, err
