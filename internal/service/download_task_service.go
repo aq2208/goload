@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	// "encoding/json"
 
+	"github.com/aq2208/goload/internal/dataaccess/mq"
 	goload "github.com/aq2208/goload/internal/generated"
 	"github.com/aq2208/goload/internal/model"
 	"github.com/aq2208/goload/internal/repository"
@@ -49,6 +51,7 @@ type DownloadTaskService interface {
 type downloadTaskService struct {
 	repo      repository.DownloadTaskRepository
 	tokenUtil utils.Token
+	producer  mq.Producer
 }
 
 // CreateDownloadTask implements DownloadTaskService.
@@ -58,7 +61,7 @@ func (d *downloadTaskService) CreateDownloadTask(ctx context.Context, req *Creat
 		return &CreateDownloadTaskResponse{}, err
 	}
 
-	newDownloadTask := model.DownloadTask {
+	newDownloadTask := model.DownloadTask{
 		UserID: accountId,
 	}
 
@@ -68,6 +71,14 @@ func (d *downloadTaskService) CreateDownloadTask(ctx context.Context, req *Creat
 	}
 
 	// TODO: push new event to MQ
+	// msg, err := json.Marshal(task)
+	// if err != nil {
+	// 	return fmt.Errorf("marshal error: %w", err)
+	// }
+
+	// if err := s.producer.SendMessage(msg); err != nil {
+	// 	return fmt.Errorf("kafka error: %w", err)
+	// }
 
 	return &CreateDownloadTaskResponse{
 		DownloadTask: goload.DownloadTask{
@@ -98,9 +109,11 @@ func (d *downloadTaskService) UpdateDownloadTask(ctx context.Context, req *Updat
 func NewDownloadTaskService(
 	repo repository.DownloadTaskRepository,
 	tokenUtil utils.Token,
+	producer mq.Producer,
 ) DownloadTaskService {
 	return &downloadTaskService{
 		repo:      repo,
 		tokenUtil: tokenUtil,
+		producer: producer,
 	}
 }

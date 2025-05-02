@@ -6,6 +6,7 @@ import (
 
 	"github.com/aq2208/goload/configs"
 	"github.com/aq2208/goload/internal/dataaccess/database/dbconnect"
+	// "github.com/aq2208/goload/internal/dataaccess/mq"
 	handler "github.com/aq2208/goload/internal/handler/http"
 	"github.com/aq2208/goload/internal/repository"
 	"github.com/aq2208/goload/internal/service"
@@ -25,10 +26,13 @@ func main() {
 
 	// Dependency Injection
 	accountRepo := repository.NewAccountRepository(db)
+	// downloadTaskRepo := repository.NewDownloadTaskRepository(db)
 	hash := utils.NewHashUtil()
 	token := utils.NewTokenUtil()
+	// producer := mq.NewKafkaProducer()
 	accountService := service.NewAccountService(accountRepo, hash, token)
 	accountHandler := handler.NewAccountHandler(accountService)
+	// downloadTaskService := service.NewDownloadTaskService(downloadTaskRepo, token)
 
 	// Handle http requests
 	mux := http.NewServeMux()
