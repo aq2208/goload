@@ -27,7 +27,7 @@ func (h *DownloadTaskHandler) CreateDownloadTaskHandler(w http.ResponseWriter, r
 		return
 	}
 
-	log.Default().Printf("CreateAccountRequest: %v", req)
+	log.Default().Printf("CreateDownloadTaskRequest: %v", req)
 
 	// validate request
 	if (req.Token == "" || req.URL == "" || req.DownloadType != constant.DownloadType_DOWNLOAD_TYPE_HTTP) {
