@@ -25,7 +25,7 @@ func newSaramaConfig() *sarama.Config {
 	saramaConfig.Producer.Retry.Max = 1
 	saramaConfig.Producer.RequiredAcks = sarama.WaitForAll
 	saramaConfig.Producer.Return.Successes = true
-	saramaConfig.ClientID = ""
+	saramaConfig.ClientID = "goload-producer"
 	saramaConfig.Metadata.Full = true
 	return saramaConfig
 }

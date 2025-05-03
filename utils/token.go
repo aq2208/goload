@@ -2,17 +2,16 @@ package utils
 
 import (
 	"context"
+	"errors"
+	"log"
 	"time"
 
 	"github.com/aq2208/goload/configs"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte(configs.GetEnv("JWT_SECRET")) // should be from env var in production
-var tokenTtl time.Duration = time.Minute*5
-
 type TokenClaims struct {
-	UserId uint64
+	UserId uint64 `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
@@ -22,7 +21,10 @@ type Token interface {
 	RefreshToken()
 }
 
-type token struct {}
+type token struct {
+	JwtSecret []byte
+	TokenTtl  time.Duration
+}
 
 // RefreshToken implements Token.
 func (t *token) RefreshToken() {
@@ -31,17 +33,19 @@ func (t *token) RefreshToken() {
 
 // GenerateToken implements Token.
 func (t *token) GenerateToken(ctx context.Context, accountId uint64) (string, error) {
+	log.Printf("JWT secret length: %d bytes (%d bits)\n", len(t.JwtSecret), len(t.JwtSecret)*8)
+
 	tokenClaims := &TokenClaims{
-		UserId: accountId, 
+		UserId: accountId,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTtl)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(t.TokenTtl)),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenClaims)
 
-	signedToken, err := token.SignedString(jwtSecret)
+	signedToken, err := token.SignedString(t.JwtSecret)
 	if err != nil {
 		return "", err
 	}
@@ -50,37 +54,41 @@ func (t *token) GenerateToken(ctx context.Context, accountId uint64) (string, er
 }
 
 // GetAccountIdAndExpireTime implements Token.
-func (t *token) GetAccountIdAndExpireTime(ctx context.Context, token string) (uint64, error) {
+func (t *token) GetAccountIdAndExpireTime(ctx context.Context, tokenString string) (uint64, error) {
 	// if token is expired -> ....
 
-	// token, err := jwt.ParseWithClaims(tokenStr, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-	// 	// Ensure token was signed with the correct method
-	// 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-	// 		return nil, errors.New("unexpected signing method")
-	// 	}
-	// 	return jwtSecret, nil
-	// })
+	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		// implement callback function func(token *jwt.Token)
+		
+		// ensure token was signed with the correct method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
 
-	// if err != nil {
-	// 	return nil, err
-	// }
+		return t.JwtSecret, nil
+	})
 
-	// // Extract and validate claims
-	// claims, ok := token.Claims.(*CustomClaims)
-	// if !ok || !token.Valid {
-	// 	return nil, errors.New("invalid token")
-	// }
+	if err != nil {
+		return 0, err
+	}
 
-	// // Optional: check for expiry manually (usually handled by jwt lib)
-	// if claims.ExpiresAt.Time.Before(time.Now()) {
-	// 	return nil, errors.New("token expired")
-	// }
+	// Extract and validate claims
+	claims, ok := token.Claims.(*TokenClaims)
+	if !ok || !token.Valid {
+		return 0, errors.New("invalid token")
+	}
 
-	// return claims, nil
+	// Optional: check for expiry manually (usually handled by jwt lib)
+	if claims.ExpiresAt.Time.Before(time.Now()) {
+		return 0, errors.New("token expired")
+	}
 
-	panic("unimplemented")
+	return claims.UserId, nil
 }
 
 func NewTokenUtil() Token {
-	return &token{}
+	return &token{
+		JwtSecret: []byte(configs.GetEnv("JWT_SECRET")),
+		TokenTtl: time.Minute * 5,
+	}
 }

@@ -35,7 +35,7 @@ func main() {
 	go mq.StartKafkaConsumer()
 
 	accountService := service.NewAccountService(accountRepo, hash, token)
-	downloadTaskService := service.NewDownloadTaskService(downloadTaskRepo, token, producer)
+	downloadTaskService := service.NewDownloadTaskService(downloadTaskRepo, token, producer, db)
 	accountHandler := handler.NewAccountHandler(accountService)
 	downloadTaskHandler := handler.NewDownloadTaskHandler(downloadTaskService)
 

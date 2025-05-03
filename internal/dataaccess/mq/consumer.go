@@ -57,7 +57,7 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 func newSaramaConfigConsumer() *sarama.Config {
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Version = sarama.V2_1_0_0
-	saramaConfig.ClientID = ""
+	saramaConfig.ClientID = "goload-consumer"
 	saramaConfig.Metadata.Full = true
 	return saramaConfig
 }
@@ -65,7 +65,7 @@ func newSaramaConfigConsumer() *sarama.Config {
 func StartKafkaConsumer() error {
 	brokers := []string{"localhost:9094"}
 	topic := "my-topic-1"
-	groupId := "1"
+	groupId := "goload-consumer-group-1"
 	consumerGroup, err := sarama.NewConsumerGroup(brokers, groupId, newSaramaConfigConsumer())
 	if err != nil {
 		return err
