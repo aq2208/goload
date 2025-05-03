@@ -68,9 +68,12 @@ func StartKafkaConsumer() error {
 	groupId := "goload-consumer-group-1"
 	consumerGroup, err := sarama.NewConsumerGroup(brokers, groupId, newSaramaConfigConsumer())
 	if err != nil {
+		log.Printf("Error starting Kafka consumer: %v", err)
 		return err
 	}
 	defer consumerGroup.Close()
+
+	log.Println("Starting Kafka consumer...")
 
 	ctx := context.Background()
 	for {
@@ -78,7 +81,7 @@ func StartKafkaConsumer() error {
 		if err != nil {
 			log.Printf("Error consuming: %v", err)
 		}
-	}
+	}	
 }
 
 // build separate handler for each type of event (in handler folder)
