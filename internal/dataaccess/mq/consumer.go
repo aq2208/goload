@@ -62,8 +62,11 @@ func newSaramaConfigConsumer() *sarama.Config {
 	return saramaConfig
 }
 
-func StartKafkaConsumer(brokers []string, topic, groupID string) error {
-	consumerGroup, err := sarama.NewConsumerGroup(brokers, groupID, newSaramaConfigConsumer())
+func StartKafkaConsumer() error {
+	brokers := []string{"localhost:9094"}
+	topic := "my-topic-1"
+	groupId := "1"
+	consumerGroup, err := sarama.NewConsumerGroup(brokers, groupId, newSaramaConfigConsumer())
 	if err != nil {
 		return err
 	}

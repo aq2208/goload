@@ -1,6 +1,8 @@
 package mq
 
 import (
+	"log"
+
 	"github.com/IBM/sarama"
 	"github.com/aq2208/goload/internal/model"
 )
@@ -28,9 +30,12 @@ func newSaramaConfig() *sarama.Config {
 	return saramaConfig
 }
 
-func NewKafkaProducer(brokers []string, topic string) (Producer, error) {
+func NewKafkaProducer() (Producer, error) {
+	brokers := []string{"localhost:9094"}
+	topic := "my-topic-1"
 	producer, err := sarama.NewSyncProducer(brokers, newSaramaConfig())
 	if err != nil {
+		log.Fatalf("Error creating Kafka producer: %v", err)
 		return nil, err
 	}
 	return &KafkaProducer{producer: producer, topic: topic}, nil

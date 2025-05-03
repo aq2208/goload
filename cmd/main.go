@@ -6,7 +6,7 @@ import (
 
 	"github.com/aq2208/goload/configs"
 	"github.com/aq2208/goload/internal/dataaccess/database/dbconnect"
-	// "github.com/aq2208/goload/internal/dataaccess/mq"
+	"github.com/aq2208/goload/internal/dataaccess/mq"
 	handler "github.com/aq2208/goload/internal/handler/http"
 	"github.com/aq2208/goload/internal/repository"
 	"github.com/aq2208/goload/internal/service"
@@ -26,19 +26,26 @@ func main() {
 
 	// Dependency Injection
 	accountRepo := repository.NewAccountRepository(db)
-	// downloadTaskRepo := repository.NewDownloadTaskRepository(db)
+	downloadTaskRepo := repository.NewDownloadTaskRepository(db)
 	hash := utils.NewHashUtil()
 	token := utils.NewTokenUtil()
-	// producer := mq.NewKafkaProducer()
+
+	// Start Kafka producer and consumer
+	producer, _ := mq.NewKafkaProducer()
+	go mq.StartKafkaConsumer()
+
 	accountService := service.NewAccountService(accountRepo, hash, token)
+	downloadTaskService := service.NewDownloadTaskService(downloadTaskRepo, token, producer)
 	accountHandler := handler.NewAccountHandler(accountService)
-	// downloadTaskService := service.NewDownloadTaskService(downloadTaskRepo, token)
+	downloadTaskHandler := handler.NewDownloadTaskHandler(downloadTaskService)
 
 	// Handle http requests
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/v1/login", accountHandler.Login)
 	mux.HandleFunc("POST /api/v1/users", accountHandler.CreateAccountHandler)
+	mux.HandleFunc("POST /api/v1/download-tasks", downloadTaskHandler.CreateDownloadTaskHandler)
 
+	// Start http server
 	log.Println("Server running on :8080")
 	err = http.ListenAndServe(":8080", mux)
 	if err != nil {
