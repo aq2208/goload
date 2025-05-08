@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/aq2208/goload/internal/constant"
-	"github.com/aq2208/goload/internal/dataaccess/mq"
+	"github.com/aq2208/goload/internal/dataaccess/file"
+	"github.com/aq2208/goload/internal/dataaccess/mq/producer"
 	"github.com/aq2208/goload/internal/model"
 	"github.com/aq2208/goload/internal/repository"
 	"github.com/aq2208/goload/utils"
@@ -65,6 +67,7 @@ type GetDownloadTaskFileRequest struct {
 type DownloadTaskService interface {
 	CreateDownloadTask(ctx context.Context, req *CreateDownloadTaskRequest) (*CreateDownloadTaskResponse, error)
 	GetDownloadTaskList(ctx context.Context, req *GetDownloadTaskListRequest) (*GetDownloadTaskListResponse, error)
+	ProcessDownload(ctx context.Context, id uint64) error
 	// GetDownloadTask(ctx context.Context, req *GetDownloadTaskRequest) (*GetDownloadTaskResponse, error)
 	// UpdateDownloadTask(ctx context.Context, req *handler.UpdateDownloadTaskRequest) (*handler.UpdateDownloadTaskResponse, error)
 	// DeleteDownloadTask(ctx context.Context, req *handler.DeleteDownloadTaskRequest) (*handler.DeleteDownloadTaskResponse, error)
@@ -72,10 +75,11 @@ type DownloadTaskService interface {
 }
 
 type downloadTaskService struct {
-	db        *sql.DB
-	repo      repository.DownloadTaskRepository
-	tokenUtil utils.Token
-	producer  mq.Producer
+	db         *sql.DB
+	repo       repository.DownloadTaskRepository
+	tokenUtil  utils.Token
+	producer   producer.Producer
+	fileClient file.Client
 }
 
 // CreateDownloadTask implements DownloadTaskService.
@@ -111,7 +115,7 @@ func (d *downloadTaskService) CreateDownloadTask(ctx context.Context, req *Creat
 	}
 	newDownloadTask.ID = newTaskId
 
-	// TODO: push new event to MQ
+	// push new event to MQ
 	msg, err := json.Marshal(newTaskId)
 	if err != nil {
 		return &CreateDownloadTaskResponse{}, fmt.Errorf("marshal error: %w", err)
@@ -133,6 +137,56 @@ func (d *downloadTaskService) GetDownloadTaskList(ctx context.Context, req *GetD
 	panic("unimplemented")
 }
 
+func (d *downloadTaskService) ProcessDownload(ctx context.Context, id uint64) error {
+	// TODO: handle in transaction, lock the data when update status to in-progress
+	downloadTask, err := d.repo.GetDownloadTaskById(ctx, id)
+	if err != nil {
+
+	}
+
+	if downloadTask.Status != model.DownloadStatusQueued {
+		return nil
+	}
+
+	if err := d.repo.UpdateStatusDownloadTask(ctx, downloadTask.ID, string(model.DownloadStatusInProgress)); err != nil {
+		return err
+	}
+
+	// execute download
+	var downloader utils.Downloader
+	switch downloadTask.DownloadType {
+	case model.DownloadTypeHTTP:
+		downloader = utils.NewHttpDownloader(downloadTask.URL)
+
+	default:
+		log.Default().Printf("Unsupported download type %s", downloadTask.DownloadType)
+		return nil
+	}
+
+	fileClosure, err := d.fileClient.Write(ctx, "download_file.txt")
+	if err != nil {
+		return err
+	}
+
+	defer fileClosure.Close()
+
+	err = downloader.Download(ctx, fileClosure)
+	if err != nil {
+		log.Default().Printf("Failed to download file: %v", err)
+		return err
+	}
+
+	log.Default().Println("Download task executed successfully")
+
+	// update status to completed
+	if err := d.repo.UpdateStatusDownloadTask(ctx, downloadTask.ID, string(model.DownloadStatusCompleted)); err != nil {
+		log.Default().Printf("Failed to update download task to success: %v", err)
+		return err
+	}
+
+	return nil
+}
+
 // // UpdateDownloadTask implements DownloadTaskService.
 // func (d *downloadTaskService) UpdateDownloadTask(ctx context.Context, req *handler.UpdateDownloadTaskRequest) (*handler.UpdateDownloadTaskResponse, error) {
 // 	panic("unimplemented")
@@ -146,13 +200,15 @@ func (d *downloadTaskService) GetDownloadTaskList(ctx context.Context, req *GetD
 func NewDownloadTaskService(
 	repo repository.DownloadTaskRepository,
 	tokenUtil utils.Token,
-	producer mq.Producer,
+	producer producer.Producer,
 	db *sql.DB,
+	fileClient file.Client,
 ) DownloadTaskService {
 	return &downloadTaskService{
 		repo:      repo,
 		tokenUtil: tokenUtil,
 		producer:  producer,
-		db: db,
+		db:        db,
+		fileClient: fileClient,
 	}
 }

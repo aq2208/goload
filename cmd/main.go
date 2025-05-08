@@ -6,7 +6,9 @@ import (
 
 	"github.com/aq2208/goload/configs"
 	"github.com/aq2208/goload/internal/dataaccess/database/dbconnect"
-	"github.com/aq2208/goload/internal/dataaccess/mq"
+	"github.com/aq2208/goload/internal/dataaccess/file"
+	"github.com/aq2208/goload/internal/dataaccess/mq/consumer"
+	"github.com/aq2208/goload/internal/dataaccess/mq/producer"
 	handler "github.com/aq2208/goload/internal/handler/http"
 	"github.com/aq2208/goload/internal/repository"
 	"github.com/aq2208/goload/internal/service"
@@ -31,11 +33,14 @@ func main() {
 	token := utils.NewTokenUtil()
 
 	// Start Kafka producer and consumer
-	producer, _ := mq.NewKafkaProducer()
-	go mq.StartKafkaConsumer()
+	producer, _ := producer.NewKafkaProducer()
+	go consumer.StartKafkaConsumer()
+
+	// File Client
+	LocalFileClient := file.NewLocalFileClient("./download")
 
 	accountService := service.NewAccountService(accountRepo, hash, token)
-	downloadTaskService := service.NewDownloadTaskService(downloadTaskRepo, token, producer, db)
+	downloadTaskService := service.NewDownloadTaskService(downloadTaskRepo, token, producer, db, LocalFileClient)
 	accountHandler := handler.NewAccountHandler(accountService)
 	downloadTaskHandler := handler.NewDownloadTaskHandler(downloadTaskService)
 

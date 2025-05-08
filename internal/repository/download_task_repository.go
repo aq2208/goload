@@ -11,14 +11,28 @@ import (
 type DownloadTaskRepository interface {
 	CreateDownloadTask(ctx context.Context, tx *sql.Tx, task model.DownloadTask) (uint64, error)
 	UpdateDownloadTask(ctx context.Context, task model.DownloadTask) error
-	UpdateStatusDownloadTask(ctx context.Context, id int64, status string) error
+	UpdateStatusDownloadTask(ctx context.Context, id uint64, status string) error
 	DeleteDownloadTask(ctx context.Context, taskId uint64) error
 	GetDownloadTaskListOfUser(ctx context.Context, userId, offset, limit uint64) ([]model.DownloadTask, error)
 	GetDownloadTaskCountOfUser(ctx context.Context, userId uint64) (uint64, error)
+	GetDownloadTaskById(ctx context.Context, id uint64) (model.DownloadTask, error)
 }
 
 type downloadTaskRepository struct {
 	db *sql.DB
+}
+
+// GetDownloadTaskById implements DownloadTaskRepository.
+func (d *downloadTaskRepository) GetDownloadTaskById(ctx context.Context, id uint64) (model.DownloadTask, error) {
+	var dt model.DownloadTask
+
+	row := d.db.QueryRow("SELECT id, user_id, download_type, url, status FROM download_task WHERE id = ?", id)
+	if err := row.Scan(&dt.ID, &dt.UserID, &dt.DownloadType, &dt.URL, &dt.Status); err != nil {
+		log.Default().Printf("Error query download_task: %v", err)
+		return model.DownloadTask{}, err
+	}
+
+	return dt, nil
 }
 
 // CreateDownloadTask implements DownloadTaskRepository.
@@ -56,7 +70,7 @@ func (d *downloadTaskRepository) UpdateDownloadTask(ctx context.Context, task mo
 	panic("unimplemented")
 }
 
-func (r *downloadTaskRepository) UpdateStatusDownloadTask(ctx context.Context, id int64, status string) error {
+func (r *downloadTaskRepository) UpdateStatusDownloadTask(ctx context.Context, id uint64, status string) error {
 	_, err := r.db.ExecContext(ctx, "UPDATE download_task SET status = ? WHERE id = ?", status, id)
 	return err
 }
