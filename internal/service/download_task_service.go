@@ -148,7 +148,7 @@ func (d *downloadTaskService) ProcessDownload(ctx context.Context, id uint64) er
 		return nil
 	}
 
-	if err := d.repo.UpdateStatusDownloadTask(ctx, downloadTask.ID, string(model.DownloadStatusInProgress)); err != nil {
+	if err := d.repo.UpdateStatusAndMetadataDownloadTask(ctx, downloadTask.ID, string(model.DownloadStatusInProgress), "{}"); err != nil {
 		return err
 	}
 
@@ -163,23 +163,26 @@ func (d *downloadTaskService) ProcessDownload(ctx context.Context, id uint64) er
 		return nil
 	}
 
-	fileClosure, err := d.fileClient.Write(ctx, "download_file.txt")
+	fileName := fmt.Sprintf("download_file_%d", downloadTask.ID)
+	fileClosure, err := d.fileClient.Write(ctx, fileName)
 	if err != nil {
 		return err
 	}
 
 	defer fileClosure.Close()
 
-	err = downloader.Download(ctx, fileClosure)
+	metadata, err := downloader.Download(ctx, fileClosure)
 	if err != nil {
 		log.Default().Printf("Failed to download file: %v", err)
 		return err
 	}
+	metadata["file_name"] = fileName
+	jsonString, _ := json.Marshal(metadata)
 
 	log.Default().Println("Download task executed successfully")
 
 	// update status to completed
-	if err := d.repo.UpdateStatusDownloadTask(ctx, downloadTask.ID, string(model.DownloadStatusCompleted)); err != nil {
+	if err := d.repo.UpdateStatusAndMetadataDownloadTask(ctx, downloadTask.ID, string(model.DownloadStatusCompleted), string(jsonString)); err != nil {
 		log.Default().Printf("Failed to update download task to success: %v", err)
 		return err
 	}

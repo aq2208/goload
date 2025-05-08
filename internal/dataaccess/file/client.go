@@ -43,7 +43,7 @@ func (l *LocalFileClient) Read(ctx context.Context, filePath string) (io.ReadClo
 	file, err := os.Open(absolutePath)
 	if err != nil {
 		return nil, err
-	} 
+	}
 
 	return newBufferedFileReader(file), nil
 }

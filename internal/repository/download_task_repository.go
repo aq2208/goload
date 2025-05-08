@@ -11,7 +11,7 @@ import (
 type DownloadTaskRepository interface {
 	CreateDownloadTask(ctx context.Context, tx *sql.Tx, task model.DownloadTask) (uint64, error)
 	UpdateDownloadTask(ctx context.Context, task model.DownloadTask) error
-	UpdateStatusDownloadTask(ctx context.Context, id uint64, status string) error
+	UpdateStatusAndMetadataDownloadTask(ctx context.Context, id uint64, status string, metadata string) error
 	DeleteDownloadTask(ctx context.Context, taskId uint64) error
 	GetDownloadTaskListOfUser(ctx context.Context, userId, offset, limit uint64) ([]model.DownloadTask, error)
 	GetDownloadTaskCountOfUser(ctx context.Context, userId uint64) (uint64, error)
@@ -70,8 +70,8 @@ func (d *downloadTaskRepository) UpdateDownloadTask(ctx context.Context, task mo
 	panic("unimplemented")
 }
 
-func (r *downloadTaskRepository) UpdateStatusDownloadTask(ctx context.Context, id uint64, status string) error {
-	_, err := r.db.ExecContext(ctx, "UPDATE download_task SET status = ? WHERE id = ?", status, id)
+func (r *downloadTaskRepository) UpdateStatusAndMetadataDownloadTask(ctx context.Context, id uint64, status string, metadata string) error {
+	_, err := r.db.ExecContext(ctx, "UPDATE download_task SET status = ?, metadata = ? WHERE id = ?", status, metadata, id)
 	return err
 }
 
