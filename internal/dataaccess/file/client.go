@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"io"
+	"log"
 	"os"
 	"path"
 )
@@ -54,6 +55,7 @@ func (l *LocalFileClient) Write(
 	absolutePath := path.Join(l.Directory, filePath)
 	file, err := os.Create(absolutePath)
 	if err != nil {
+		log.Default().Printf("Error creating new file: %v", err)
 		return nil, err
 	}
 

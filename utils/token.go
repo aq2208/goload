@@ -89,6 +89,6 @@ func (t *token) GetAccountIdAndExpireTime(ctx context.Context, tokenString strin
 func NewTokenUtil() Token {
 	return &token{
 		JwtSecret: []byte(configs.GetEnv("JWT_SECRET")),
-		TokenTtl: time.Minute * 5,
+		TokenTtl: time.Minute * 30,
 	}
 }

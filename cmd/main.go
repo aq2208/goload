@@ -32,17 +32,19 @@ func main() {
 	hash := utils.NewHashUtil()
 	token := utils.NewTokenUtil()
 
-	// Start Kafka producer and consumer
+	// Kafka producer
 	producer, _ := producer.NewKafkaProducer()
-	go consumer.StartKafkaConsumer()
 
 	// File Client
-	LocalFileClient := file.NewLocalFileClient("./download")
+	LocalFileClient := file.NewLocalFileClient("../download")
 
 	accountService := service.NewAccountService(accountRepo, hash, token)
 	downloadTaskService := service.NewDownloadTaskService(downloadTaskRepo, token, producer, db, LocalFileClient)
 	accountHandler := handler.NewAccountHandler(accountService)
 	downloadTaskHandler := handler.NewDownloadTaskHandler(downloadTaskService)
+
+	// Start Kafka consumer
+	go consumer.StartKafkaConsumer(downloadTaskService)
 
 	// Handle http requests
 	mux := http.NewServeMux()

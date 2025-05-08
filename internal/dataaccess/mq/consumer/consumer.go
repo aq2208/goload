@@ -17,7 +17,7 @@ type ConsumerHanlerFunc func(ctx context.Context, queueName string, payload []by
 // }
 
 type Consumer struct {
-	DownloadTaskService service.DownloadTaskService
+	service service.DownloadTaskService
 }
 
 func (c *Consumer) Setup(_ sarama.ConsumerGroupSession) error {
@@ -34,9 +34,12 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 		session.MarkMessage(message, string(message.Value))
 
 		var id uint64
-		json.Unmarshal(message.Value, &id)
+		if err := json.Unmarshal(message.Value, &id); err != nil {
+			log.Default().Printf("Failed to parse message: %v", err)
+			return err
+		}
 
-		if err := c.DownloadTaskService.ProcessDownload(context.Background(), id); err != nil {
+		if err := c.service.ProcessDownload(context.Background(), id); err != nil {
 			log.Default().Printf("Failed to consumer message: %v", err)
 			return err
 		}
@@ -52,7 +55,7 @@ func newSaramaConfigConsumer() *sarama.Config {
 	return saramaConfig
 }
 
-func StartKafkaConsumer() error {
+func StartKafkaConsumer(service service.DownloadTaskService) error {
 	brokers := []string{"localhost:9094"}
 	topic := "my-topic-1"
 	groupId := "goload-consumer-group-1"
@@ -67,7 +70,7 @@ func StartKafkaConsumer() error {
 
 	ctx := context.Background()
 	for {
-		err := consumerGroup.Consume(ctx, []string{topic}, &Consumer{})
+		err := consumerGroup.Consume(ctx, []string{topic}, &Consumer{service: service})
 		if err != nil {
 			log.Printf("Error consuming: %v", err)
 		}
