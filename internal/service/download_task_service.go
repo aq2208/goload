@@ -241,17 +241,21 @@ func (d *downloadTaskService) RetryPendingTasks(ctx context.Context) error {
 }
 
 func (d *downloadTaskService) ProcessDownload(ctx context.Context, id uint64) error {
+	var isDownloadFailed = false
+
 	// TODO: handle in transaction, lock the data when update status to in-progress
 	downloadTask, err := d.repo.GetDownloadTaskById(ctx, id)
 	if err != nil {
 
 	}
 
-	if downloadTask.Status != model.DownloadStatusQueued {
+	if downloadTask.Status != model.DownloadStatusQueued && downloadTask.Status != model.DownloadStatusFailed {
+		isDownloadFailed = true
 		return nil
 	}
 
 	if err := d.repo.UpdateStatusAndMetadataDownloadTask(ctx, downloadTask.ID, string(model.DownloadStatusInProgress), "{}"); err != nil {
+		isDownloadFailed = true
 		return err
 	}
 
@@ -263,20 +267,32 @@ func (d *downloadTaskService) ProcessDownload(ctx context.Context, id uint64) er
 
 	default:
 		log.Default().Printf("Unsupported download type %s", downloadTask.DownloadType)
+		isDownloadFailed = true
 		return nil
 	}
 
 	fileName := fmt.Sprintf("download_file_%d", downloadTask.ID)
 	fileClosure, err := d.fileClient.Write(ctx, fileName)
 	if err != nil {
+		isDownloadFailed = true
 		return err
 	}
 
 	defer fileClosure.Close()
+	defer func() {
+		if isDownloadFailed {
+			log.Default().Printf("Marking download task %d as FAILED", id)
+			updateErr := d.repo.UpdateStatusAndMetadataDownloadTask(ctx, id, string(model.DownloadStatusFailed), "{}")
+			if updateErr != nil {
+				log.Default().Printf("Failed to update task %d to FAILED: %v", id, updateErr)
+			}
+		}
+	}()
 
 	metadata, err := downloader.Download(ctx, fileClosure)
 	if err != nil {
 		log.Default().Printf("Failed to download file: %v", err)
+		isDownloadFailed = true
 		return err
 	}
 	metadata["file_name"] = fileName
@@ -287,6 +303,7 @@ func (d *downloadTaskService) ProcessDownload(ctx context.Context, id uint64) er
 	// update status to completed
 	if err := d.repo.UpdateStatusAndMetadataDownloadTask(ctx, downloadTask.ID, string(model.DownloadStatusCompleted), string(jsonString)); err != nil {
 		log.Default().Printf("Failed to update download task to success: %v", err)
+		isDownloadFailed = true
 		return err
 	}
 

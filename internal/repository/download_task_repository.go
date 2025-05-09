@@ -27,7 +27,7 @@ type downloadTaskRepository struct {
 func (d *downloadTaskRepository) GetPendingTasks(ctx context.Context) ([]model.DownloadTask, error) {
 	var records []model.DownloadTask
 
-	rows, err := d.db.Query("SELECT id, user_id, download_type, url, status FROM download_task WHERE status in ('queued, failed')")
+	rows, err := d.db.Query("SELECT id, user_id, download_type, url, status FROM download_task WHERE status in ('queued', 'failed')")
 	if err != nil {
 		return nil, err
 	}
