@@ -77,6 +77,7 @@ type DownloadTaskService interface {
 	GetDownloadFile(ctx context.Context, id uint64) ([]byte, error)
 	GetDownloadFilePresignedUrl(ctx context.Context, token string, id uint64) (string, error)
 	ProcessDownload(ctx context.Context, id uint64) error
+	RetryPendingTasks(ctx context.Context) error
 	// GetDownloadTask(ctx context.Context, req *GetDownloadTaskRequest) (*GetDownloadTaskResponse, error)
 	// UpdateDownloadTask(ctx context.Context, req *handler.UpdateDownloadTaskRequest) (*handler.UpdateDownloadTaskResponse, error)
 	// DeleteDownloadTask(ctx context.Context, req *handler.DeleteDownloadTaskRequest) (*handler.DeleteDownloadTaskResponse, error)
@@ -107,7 +108,6 @@ func NewDownloadTaskService(
 	}
 }
 
-// CreateDownloadTask implements DownloadTaskService.
 func (d *downloadTaskService) CreateDownloadTask(ctx context.Context, req *CreateDownloadTaskRequest) (*CreateDownloadTaskResponse, error) {
 	// validate jwt
 	accountId, err := d.tokenUtil.GetAccountIdAndExpireTime(ctx, req.Token)
@@ -215,6 +215,29 @@ func (d *downloadTaskService) GetDownloadFilePresignedUrl(
 	}
 
 	return url.String(), nil
+}
+
+func (d *downloadTaskService) RetryPendingTasks(ctx context.Context) error {
+	tasks, err := d.repo.GetPendingTasks(ctx)
+	if err != nil {
+		log.Printf("Error fetching failed tasks: %v", err)
+		return err
+	}
+
+	log.Printf("Retrying %d task(s)", len(tasks))
+
+	if len(tasks) == 0 {
+		return nil
+	}
+
+	for _, task := range tasks {
+		log.Printf("Retrying download task ID: %d", task.ID)
+		if err := d.ProcessDownload(ctx, task.ID); err != nil {
+			log.Printf("Retry failed for task ID %d: %v", task.ID, err)
+		}
+	}
+
+	return nil
 }
 
 func (d *downloadTaskService) ProcessDownload(ctx context.Context, id uint64) error {

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/aq2208/goload/configs"
 	"github.com/aq2208/goload/internal/dataaccess/database/dbconnect"
@@ -13,6 +15,7 @@ import (
 	"github.com/aq2208/goload/internal/repository"
 	"github.com/aq2208/goload/internal/service"
 	"github.com/aq2208/goload/utils"
+	"github.com/go-co-op/gocron"
 )
 
 func main() {
@@ -56,6 +59,9 @@ func main() {
 	mux.HandleFunc("GET /api/v1/download-tasks", downloadTaskHandler.GetListDownloadTasks)
 	mux.HandleFunc("GET /api/v1/download-tasks/{id}", downloadTaskHandler.GetDownloadFile)
 
+	// Start cron job
+	StartCronJob(downloadTaskService)
+
 	// Start http server
 	log.Println("Server running on :8080")
 	err = http.ListenAndServe(":8080", mux)
@@ -76,4 +82,21 @@ func CreateFileClient() file.Client {
 
 	log.Fatal("Unsupported Storage Mode!")
 	return nil
+}
+
+func StartCronJob(service service.DownloadTaskService) {
+	s := gocron.NewScheduler(time.UTC)
+
+	// Schedule the retry job every 1 minute
+	_, err := s.Every(1).Minute().Do(func() {
+		log.Println("Running cron job: retrying failed tasks...")
+		service.RetryPendingTasks(context.TODO())
+	})
+
+	if err != nil {
+		log.Fatalf("Failed to schedule retry job: %v", err)
+	}
+
+	// Start scheduler
+	s.StartAsync()
 }

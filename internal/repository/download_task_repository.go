@@ -16,10 +16,34 @@ type DownloadTaskRepository interface {
 	GetDownloadTaskListOfUser(ctx context.Context, userId, offset, limit uint64) ([]model.DownloadTask, error)
 	GetDownloadTaskCountOfUser(ctx context.Context, userId uint64) (uint64, error)
 	GetDownloadTaskById(ctx context.Context, id uint64) (model.DownloadTask, error)
+	GetPendingTasks(ctx context.Context) ([]model.DownloadTask, error)
 }
 
 type downloadTaskRepository struct {
 	db *sql.DB
+}
+
+// GetPendingTasks implements DownloadTaskRepository.
+func (d *downloadTaskRepository) GetPendingTasks(ctx context.Context) ([]model.DownloadTask, error) {
+	var records []model.DownloadTask
+
+	rows, err := d.db.Query("SELECT id, user_id, download_type, url, status FROM download_task WHERE status in ('queued, failed')")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var record model.DownloadTask
+
+		if err := rows.Scan(&record.ID, &record.UserID, &record.DownloadType, &record.URL, &record.Status); err != nil {
+			return nil, err
+		}
+
+		records = append(records, record)
+	}
+
+	return records, nil
 }
 
 // GetDownloadTaskById implements DownloadTaskRepository.
