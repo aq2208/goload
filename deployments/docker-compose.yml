@@ -61,6 +61,9 @@ services:
         - MINIO_ROOT_USER=aq2208
         - MINIO_ROOT_PASSWORD=quancuanam2003
     restart: always
+    volumes:
+      - minio_data:/data
 
 volumes:
   mysql_data:
+  minio_data:

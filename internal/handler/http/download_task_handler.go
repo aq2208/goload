@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	constant "github.com/aq2208/goload/internal/constant"
 	"github.com/aq2208/goload/internal/service"
@@ -45,4 +46,29 @@ func (h *DownloadTaskHandler) CreateDownloadTaskHandler(w http.ResponseWriter, r
 	// write response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *DownloadTaskHandler) GetDownloadFile(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	log.Printf("Download task ID: %s", id)
+
+	taskID, err := strconv.ParseUint(id, 10, 64)
+    if err != nil {
+        http.Error(w, "invalid task ID", http.StatusBadRequest)
+        return
+    }
+
+	resp, err := h.service.GetDownloadFilePresignedUrl(context.TODO(), r.Header.Get("Authorization"), taskID)
+	if err != nil {
+		log.Printf("Error downloading file from S3: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(resp))
+}
+
+func (h *DownloadTaskHandler) GetListDownloadTasks(w http.ResponseWriter, r *http.Request) {
+	
 }

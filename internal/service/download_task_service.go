@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	// "mime"
 
 	"github.com/aq2208/goload/internal/constant"
 	"github.com/aq2208/goload/internal/dataaccess/file"
@@ -65,8 +66,16 @@ type GetDownloadTaskFileRequest struct {
 }
 
 type DownloadTaskService interface {
-	CreateDownloadTask(ctx context.Context, req *CreateDownloadTaskRequest) (*CreateDownloadTaskResponse, error)
-	GetDownloadTaskList(ctx context.Context, req *GetDownloadTaskListRequest) (*GetDownloadTaskListResponse, error)
+	CreateDownloadTask(
+		ctx context.Context,
+		req *CreateDownloadTaskRequest,
+	) (*CreateDownloadTaskResponse, error)
+	GetDownloadTaskList(
+		ctx context.Context,
+		req *GetDownloadTaskListRequest,
+	) (*GetDownloadTaskListResponse, error)
+	GetDownloadFile(ctx context.Context, id uint64) ([]byte, error)
+	GetDownloadFilePresignedUrl(ctx context.Context, token string, id uint64) (string, error)
 	ProcessDownload(ctx context.Context, id uint64) error
 	// GetDownloadTask(ctx context.Context, req *GetDownloadTaskRequest) (*GetDownloadTaskResponse, error)
 	// UpdateDownloadTask(ctx context.Context, req *handler.UpdateDownloadTaskRequest) (*handler.UpdateDownloadTaskResponse, error)
@@ -80,6 +89,22 @@ type downloadTaskService struct {
 	tokenUtil  utils.Token
 	producer   producer.Producer
 	fileClient file.Client
+}
+
+func NewDownloadTaskService(
+	repo repository.DownloadTaskRepository,
+	tokenUtil utils.Token,
+	producer producer.Producer,
+	db *sql.DB,
+	fileClient file.Client,
+) DownloadTaskService {
+	return &downloadTaskService{
+		repo:       repo,
+		tokenUtil:  tokenUtil,
+		producer:   producer,
+		db:         db,
+		fileClient: fileClient,
+	}
 }
 
 // CreateDownloadTask implements DownloadTaskService.
@@ -132,9 +157,64 @@ func (d *downloadTaskService) CreateDownloadTask(ctx context.Context, req *Creat
 	}, nil
 }
 
-// GetDownloadTaskList implements DownloadTaskService.
-func (d *downloadTaskService) GetDownloadTaskList(ctx context.Context, req *GetDownloadTaskListRequest) (*GetDownloadTaskListResponse, error) {
+func (d *downloadTaskService) GetDownloadTaskList(
+	ctx context.Context,
+	req *GetDownloadTaskListRequest,
+) (*GetDownloadTaskListResponse, error) {
 	panic("unimplemented")
+}
+
+func (d *downloadTaskService) GetDownloadFile(
+	ctx context.Context,
+	id uint64,
+) ([]byte, error) {
+	panic("unimplemented")
+}
+
+func (d *downloadTaskService) GetDownloadFilePresignedUrl(
+	ctx context.Context,
+	token string,
+	id uint64,
+) (string, error) {
+	// validate jwt
+	accountId, err := d.tokenUtil.GetAccountIdAndExpireTime(ctx, token)
+	if err != nil {
+		log.Println("Invalid access token")
+		return "", err
+	}
+
+	downloadTask, err := d.repo.GetDownloadTaskById(ctx, id)
+	if err != nil {
+		log.Printf("Task %d not found", id)
+		return "", fmt.Errorf("TASK %d NOT FOUND", id)
+	}
+
+	if downloadTask.UserID != accountId {
+		log.Printf("Task %d not found", id)
+		return "", fmt.Errorf("NO PERMISSION")
+	}
+
+	if downloadTask.Status != model.DownloadStatusCompleted {
+		log.Printf("Task %d invalid status", id)
+		return "", fmt.Errorf("TASK %d INVALID STATUS", id)
+	}
+
+	// objectContentType := downloadTask.Metadata.String
+	// fileExtension := mime.ExtensionsByType(contentType)
+	// if len(fileExtension) > 0 {
+	// 	fileExtension = fileExtension[0] // e.g., ".png"
+	// }
+	// if fileExtension == "" {
+	// 	fileExtension = ".bin" // fallback generic
+	// }
+
+	url, err := d.fileClient.GetPresignedUrl(ctx, id)
+	if err != nil {
+		log.Printf("Error generate presigned url: %v", err)
+		return "", err
+	}
+
+	return url.String(), nil
 }
 
 func (d *downloadTaskService) ProcessDownload(ctx context.Context, id uint64) error {
@@ -188,30 +268,4 @@ func (d *downloadTaskService) ProcessDownload(ctx context.Context, id uint64) er
 	}
 
 	return nil
-}
-
-// // UpdateDownloadTask implements DownloadTaskService.
-// func (d *downloadTaskService) UpdateDownloadTask(ctx context.Context, req *handler.UpdateDownloadTaskRequest) (*handler.UpdateDownloadTaskResponse, error) {
-// 	panic("unimplemented")
-// }
-
-// // DeleteDownloadTask implements DownloadTaskService.
-// func (d *downloadTaskService) DeleteDownloadTask(ctx context.Context, req *handler.DeleteDownloadTaskRequest) (*handler.DeleteDownloadTaskResponse, error) {
-// 	panic("unimplemented")
-// }
-
-func NewDownloadTaskService(
-	repo repository.DownloadTaskRepository,
-	tokenUtil utils.Token,
-	producer producer.Producer,
-	db *sql.DB,
-	fileClient file.Client,
-) DownloadTaskService {
-	return &downloadTaskService{
-		repo:      repo,
-		tokenUtil: tokenUtil,
-		producer:  producer,
-		db:        db,
-		fileClient: fileClient,
-	}
 }

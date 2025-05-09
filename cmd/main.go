@@ -36,10 +36,12 @@ func main() {
 	producer, _ := producer.NewKafkaProducer()
 
 	// File Client
-	LocalFileClient := file.NewLocalFileClient("../download")
+	fileClient := CreateFileClient()
 
 	accountService := service.NewAccountService(accountRepo, hash, token)
-	downloadTaskService := service.NewDownloadTaskService(downloadTaskRepo, token, producer, db, LocalFileClient)
+	downloadTaskService := service.NewDownloadTaskService(
+		downloadTaskRepo, token, producer, db, fileClient,
+	)
 	accountHandler := handler.NewAccountHandler(accountService)
 	downloadTaskHandler := handler.NewDownloadTaskHandler(downloadTaskService)
 
@@ -51,6 +53,8 @@ func main() {
 	mux.HandleFunc("GET /api/v1/login", accountHandler.Login)
 	mux.HandleFunc("POST /api/v1/users", accountHandler.CreateAccountHandler)
 	mux.HandleFunc("POST /api/v1/download-tasks", downloadTaskHandler.CreateDownloadTaskHandler)
+	mux.HandleFunc("GET /api/v1/download-tasks", downloadTaskHandler.GetListDownloadTasks)
+	mux.HandleFunc("GET /api/v1/download-tasks/{id}", downloadTaskHandler.GetDownloadFile)
 
 	// Start http server
 	log.Println("Server running on :8080")
@@ -60,4 +64,16 @@ func main() {
 	}
 
 	defer db.Close()
+}
+
+func CreateFileClient() file.Client {
+	storageMode := configs.GetEnv("STORAGE_MODE")
+	if storageMode == "S3" {
+		return file.NewS3Client("goload-file", "localhost:9000", "aq2208", "quancuanam2003")
+	} else if storageMode == "LOCAL" {
+		return file.NewLocalClient("../download")
+	}
+
+	log.Fatal("Unsupported Storage Mode!")
+	return nil
 }
